@@ -1,0 +1,30 @@
+name: Go
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      GOOS: windows
+      GOARCH: amd64
+
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Build
+      run: go build -ldflags -H=windowsgui -v -i -o upm-local-proxy.exe github.com/Toxic2k/upm-local-proxy/tray
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v1
+      with:
+        name: upm-local-proxy.exe
+        path: upm-local-proxy.exe
