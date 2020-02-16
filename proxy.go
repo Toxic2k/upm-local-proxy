@@ -1,7 +1,10 @@
 package upm_local_proxy
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/Toxic2k/upm-local-proxy/settings"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -41,6 +44,7 @@ func ReverseProxy(cfg *settings.Config) *httputil.ReverseProxy {
 		req.URL.Scheme = r.Url.Scheme
 		req.URL.Host = r.Url.Host
 		req.URL.Path = singleJoiningSlash(r.Url.Path, req.URL.Path)
+		req.Host = ""
 		if r.Url.RawQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = r.Url.RawQuery + req.URL.RawQuery
 		} else {
@@ -52,6 +56,30 @@ func ReverseProxy(cfg *settings.Config) *httputil.ReverseProxy {
 		}
 		//req.SetBasicAuth(user,pass)
 		req.Header.Set("Authorization", "Bearer "+r.Token)
+		req.Header.Del("Accept-Encoding")
 	}
-	return &httputil.ReverseProxy{Director: director}
+
+	modifyResponse := func(response *http.Response) error {
+		contType := response.Header.Get("Content-Type")
+		if !strings.HasPrefix(contType, "text/html") && !strings.HasPrefix(contType, "application/json") {
+			return nil
+		}
+
+		r := findRepo(cfg, response.Request.URL.Path)
+		if r == nil {
+			r = cfg.Registries[0]
+		}
+
+		ba, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		replaced := bytes.ReplaceAll(ba, []byte(r.UrlString), []byte(fmt.Sprintf("http://localhost:%d", cfg.Port)))
+
+		response.Body = ioutil.NopCloser(bytes.NewReader(replaced))
+
+		return nil
+	}
+
+	return &httputil.ReverseProxy{Director: director, ModifyResponse: modifyResponse}
 }
