@@ -13,5 +13,11 @@ func LoadConfig() (*settings.Config, bool, error) {
 		return nil, def, err
 	}
 
+	for i := 0; i < len(cfg.Registries); i++ {
+		if cfg.Registries[i].SavedToken != "" {
+			cfg.Registries[i].Token = cfg.Registries[i].SavedToken
+		}
+	}
+
 	return cfg, def, nil
 }

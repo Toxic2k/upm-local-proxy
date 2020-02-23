@@ -5,7 +5,6 @@ import (
 	upm_local_proxy "github.com/Toxic2k/upm-local-proxy"
 	"github.com/Toxic2k/upm-local-proxy/settings"
 	"github.com/gen2brain/dlgs"
-	"log"
 )
 
 func repoLogin(cfg *settings.Config) bool {
@@ -14,7 +13,7 @@ func repoLogin(cfg *settings.Config) bool {
 		if r.Login == "" {
 			eUser, res, err := dlgs.Entry("Auth", fmt.Sprintf("Enter your login for %s", r.Name), "")
 			if err != nil {
-				log.Printf("login dialog error: %v", err)
+				logger.Error().Err(err).Msg("login dialog error")
 				break
 			}
 			if res {
@@ -25,26 +24,31 @@ func repoLogin(cfg *settings.Config) bool {
 			}
 		}
 
-		ePass, res, err := dlgs.Password("Auth", fmt.Sprintf("Enter your password for %s", r.Name))
-		if err != nil {
-			log.Printf("password dialog error: %v", err)
-			break
-		}
-		if res {
-			r.Pass = ePass
-		} else {
-			break
-		}
-
-		err = upm_local_proxy.GetToken(r)
-		if err != nil {
-			log.Printf("get token for %s error %s", r.Name, err)
-			r.Pass = ""
-			_, err = dlgs.Error("Error", "unauthorized")
+		if r.Token == "" {
+			ePass, res, err := dlgs.Password("Auth", fmt.Sprintf("Enter your password for %s", r.Name))
 			if err != nil {
-				panic(err)
+				logger.Error().Err(err).Msg("password dialog error")
+				break
 			}
-			return false
+			if res {
+				r.Pass = ePass
+			} else {
+				break
+			}
+
+			err = upm_local_proxy.GetToken(r, logger)
+			if err != nil {
+				logger.Error().Err(err).Msgf("get token for %s", r.Name)
+				r.Pass = ""
+				_, err = dlgs.Error("Error", "unauthorized")
+				if err != nil {
+					panic(err)
+				}
+				return false
+			}
+			if settings.TokenAutoSave {
+				configChanged = true
+			}
 		}
 	}
 	if configChanged {

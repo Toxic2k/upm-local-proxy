@@ -9,13 +9,14 @@ import (
 )
 
 type ConfigRegistry struct {
-	Name      string   `yaml:"name"`
-	UrlString string   `yaml:"url"`
-	Scopes    []string `yaml:"scopes"`
-	Login     string   `yaml:"login"`
-	Pass      string   `yaml:"-"`
-	Token     string   `yaml:"-"`
-	Url       url.URL  `yaml:"-"`
+	Name       string   `yaml:"name"`
+	UrlString  string   `yaml:"url"`
+	Scopes     []string `yaml:"scopes"`
+	Login      string   `yaml:"login"`
+	Pass       string   `yaml:"-"`
+	Token      string   `yaml:"-"`
+	SavedToken string   `yaml:"saved_token,omitempty"`
+	Url        url.URL  `yaml:"-"`
 }
 
 type Config struct {
@@ -108,5 +109,6 @@ func (cfg *Config) ResetAuth() {
 		registry.Login = ""
 		registry.Pass = ""
 		registry.Token = ""
+		registry.SavedToken = ""
 	}
 }

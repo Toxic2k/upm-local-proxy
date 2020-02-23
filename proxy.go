@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Toxic2k/upm-local-proxy/settings"
+	"github.com/rs/zerolog"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -34,7 +35,7 @@ func findRepo(cfg *settings.Config, path string) *settings.ConfigRegistry {
 	return nil
 }
 
-func ReverseProxy(cfg *settings.Config) *httputil.ReverseProxy {
+func ReverseProxy(cfg *settings.Config, logger zerolog.Logger) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		r := findRepo(cfg, req.URL.Path)
 		if r == nil {
@@ -60,6 +61,8 @@ func ReverseProxy(cfg *settings.Config) *httputil.ReverseProxy {
 	}
 
 	modifyResponse := func(response *http.Response) error {
+		logger.Info().Msgf("%d %s %s %s", response.StatusCode, response.Request.Method, response.Request.URL.Path, response.Request.URL.RawQuery)
+
 		contType := response.Header.Get("Content-Type")
 		if !strings.HasPrefix(contType, "text/html") && !strings.HasPrefix(contType, "application/json") {
 			return nil

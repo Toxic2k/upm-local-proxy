@@ -2,7 +2,6 @@ package main
 
 import (
 	"golang.org/x/sys/windows/registry"
-	"log"
 	"os"
 )
 
@@ -27,7 +26,7 @@ func autoRunCheck() (bool, error) {
 
 func autoRunToggle(run bool) error {
 	execPath := os.Args[0]
-	log.Printf("execPath: %s", execPath)
+	logger.Info().Msgf("execPath: %s", execPath)
 
 	key, _, err := registry.CreateKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
 	if err != nil {

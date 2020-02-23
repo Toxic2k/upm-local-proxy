@@ -1,14 +1,17 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	upm_local_proxy "github.com/Toxic2k/upm-local-proxy"
 	"github.com/Toxic2k/upm-local-proxy/settings"
 	"github.com/Toxic2k/upm-local-proxy/tray/icon"
 	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
-	"log"
+	"github.com/rs/zerolog"
+	"io"
 	"net/http"
+	"os"
 )
 
 type trayItems struct {
@@ -18,7 +21,33 @@ type trayItems struct {
 	mAutoRun   *systray.MenuItem
 }
 
+var logger zerolog.Logger
+
 func main() {
+
+	logPathPtr := flag.String("log", "", "logfile")
+	flag.Parse()
+
+	consoleOutput := zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true, TimeFormat: "15:04"}
+	var multiOutput io.Writer
+
+	if logPathPtr != nil && *logPathPtr != "" {
+		logFile, err := os.OpenFile(*logPathPtr, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			_, err = dlgs.Error("Error", fmt.Sprintf("Logfile open error: %s", err.Error()))
+			if err != nil {
+				panic(err)
+			}
+			return
+		}
+
+		fileOutput := zerolog.ConsoleWriter{Out: logFile, NoColor: true, TimeFormat: "15:04"}
+		multiOutput = zerolog.MultiLevelWriter(consoleOutput, fileOutput)
+	} else {
+		multiOutput = consoleOutput
+	}
+
+	logger = zerolog.New(multiOutput).With().Timestamp().Logger()
 
 	cfg, def, err := upm_local_proxy.LoadConfig()
 	if err != nil {
@@ -45,8 +74,11 @@ func main() {
 	proxyHost := fmt.Sprintf("localhost:%d", cfg.Port)
 
 	go func() {
-		log.Printf("Starting proxy at %s", proxyHost)
-		log.Fatal(http.ListenAndServe(proxyHost, upm_local_proxy.ReverseProxy(cfg)))
+		logger.Info().Msgf("Starting proxy at %s", proxyHost)
+		err := http.ListenAndServe(proxyHost, upm_local_proxy.ReverseProxy(cfg, logger))
+		if err != nil {
+			logger.Fatal().Err(err).Msg(err.Error())
+		}
 	}()
 
 	systray.Run(func() {
@@ -56,11 +88,11 @@ func main() {
 }
 
 func onExit() {
-	log.Printf("onExit\n")
+	logger.Info().Msg("onExit")
 }
 
 func onReady(cfg *settings.Config, serverHost string) {
-	log.Printf("onReady\n")
+	logger.Info().Msg("onReady")
 
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("UPM local proxy")
@@ -71,7 +103,7 @@ func onReady(cfg *settings.Config, serverHost string) {
 
 	check, err := autoRunCheck()
 	if err != nil {
-		log.Printf("autorun check error: %v", err)
+		logger.Error().Err(err).Msg("autorun check error")
 	}
 	if check {
 		items.mAutoRun.Check()
@@ -109,7 +141,7 @@ func onClicks(items trayItems, cfg *settings.Config, serverHost string) {
 				items.mAutoRun.Check()
 			}
 			if err != nil {
-				log.Printf("autorun error: %v", err)
+				logger.Error().Err(err).Msg("autorun error")
 			}
 		case <-items.mQuit:
 			systray.Quit()

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Toxic2k/upm-local-proxy/settings"
+	"github.com/rs/zerolog"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -24,9 +24,9 @@ type loginResponseJson struct {
 	Token string `json:"token"`
 }
 
-func GetToken(cfg *settings.ConfigRegistry) error {
+func GetToken(cfg *settings.ConfigRegistry, logger zerolog.Logger) error {
 	uri := fmt.Sprintf("%s://%s/-/user/org.couchdb.user:%s", cfg.Url.Scheme, cfg.Url.Host, cfg.Login)
-	log.Print(uri)
+	logger.Info().Msg(uri)
 
 	js := loginJson{
 		Id:       fmt.Sprintf("org.couchdb.user:%s", cfg.Login),
@@ -69,6 +69,10 @@ func GetToken(cfg *settings.ConfigRegistry) error {
 		}
 
 		cfg.Token = jsRes.Token
+		if settings.TokenAutoSave {
+			cfg.SavedToken = cfg.Token
+		}
+
 		return nil
 	}
 
