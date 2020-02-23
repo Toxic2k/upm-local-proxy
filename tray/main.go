@@ -41,8 +41,8 @@ func main() {
 			return
 		}
 
-		fileOutput := zerolog.ConsoleWriter{Out: logFile, NoColor: true, TimeFormat: "15:04"}
-		multiOutput = zerolog.MultiLevelWriter(consoleOutput, fileOutput)
+		//multiOutput = zerolog.MultiLevelWriter(consoleOutput, logFile)
+		multiOutput = logFile
 	} else {
 		multiOutput = consoleOutput
 	}
