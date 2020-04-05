@@ -8,6 +8,7 @@ import (
 	"github.com/Toxic2k/upm-local-proxy/tray/icon"
 	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
+	"github.com/lxn/walk"
 	"github.com/rs/zerolog"
 	"io"
 	"net/http"
@@ -24,6 +25,16 @@ type trayItems struct {
 var logger zerolog.Logger
 
 func main() {
+
+	tempDir := os.TempDir()
+	err := os.Chdir(tempDir)
+	if err != nil {
+		panic(err)
+	}
+	err = walk.Resources.SetRootDirPath(tempDir)
+	if err != nil {
+		panic(err)
+	}
 
 	logPathPtr := flag.String("log", "", "logfile")
 	flag.Parse()
