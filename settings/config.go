@@ -13,6 +13,7 @@ type ConfigRegistry struct {
 	UrlString  string   `yaml:"url"`
 	Scopes     []string `yaml:"scopes"`
 	Login      string   `yaml:"login"`
+	Email      string   `yaml:"email"`
 	Pass       string   `yaml:"-"`
 	Token      string   `yaml:"-"`
 	SavedToken string   `yaml:"saved_token,omitempty"`
@@ -107,6 +108,7 @@ func LoadConfig(fn string) (*Config, bool, error) {
 func (cfg *Config) ResetAuth() {
 	for _, registry := range cfg.Registries {
 		registry.Login = ""
+		registry.Email = ""
 		registry.Pass = ""
 		registry.Token = ""
 		registry.SavedToken = ""

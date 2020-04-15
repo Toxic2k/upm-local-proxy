@@ -6,6 +6,7 @@ import (
 	upm_local_proxy "github.com/Toxic2k/upm-local-proxy"
 	"github.com/Toxic2k/upm-local-proxy/settings"
 	"github.com/Toxic2k/upm-local-proxy/tray/icon"
+	unity_upm_config "github.com/Toxic2k/upm-local-proxy/unity-upm-config"
 	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
 	"github.com/lxn/walk"
@@ -76,8 +77,17 @@ func main() {
 		}
 	}
 
+	unityCfg, err := unity_upm_config.LoadConfig()
+	if err != nil {
+		_, err = dlgs.Error("Error", fmt.Sprintf("Unity Config load error: %s", err.Error()))
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
+
 	for {
-		if repoLogin(cfg) {
+		if repoLogin(cfg, unityCfg) {
 			break
 		}
 	}
@@ -93,7 +103,7 @@ func main() {
 	}()
 
 	systray.Run(func() {
-		onReady(cfg, fmt.Sprintf("http://%s/", proxyHost))
+		onReady(cfg, unityCfg, fmt.Sprintf("http://%s/", proxyHost))
 	}, onExit)
 
 }
@@ -102,7 +112,7 @@ func onExit() {
 	logger.Info().Msg("onExit")
 }
 
-func onReady(cfg *settings.Config, serverHost string) {
+func onReady(cfg *settings.Config, unityCfg *unity_upm_config.Config, serverHost string) {
 	logger.Info().Msg("onReady")
 
 	systray.SetIcon(icon.Data)
@@ -126,11 +136,11 @@ func onReady(cfg *settings.Config, serverHost string) {
 	systray.AddSeparator()
 	items.mQuit = systray.AddMenuItem("Quit", "Exit").ClickedCh
 
-	go onClicks(items, cfg, serverHost)
+	go onClicks(items, cfg, unityCfg, serverHost)
 
 }
 
-func onClicks(items trayItems, cfg *settings.Config, serverHost string) {
+func onClicks(items trayItems, cfg *settings.Config, unityCfg *unity_upm_config.Config, serverHost string) {
 	for {
 		select {
 		case <-items.mSetup:
@@ -138,7 +148,7 @@ func onClicks(items trayItems, cfg *settings.Config, serverHost string) {
 		case <-items.mResetAuth:
 			cfg.ResetAuth()
 			for {
-				if repoLogin(cfg) {
+				if repoLogin(cfg, unityCfg) {
 					break
 				}
 			}
