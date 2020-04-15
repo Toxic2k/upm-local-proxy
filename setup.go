@@ -14,7 +14,7 @@ type unityScopedRegistry struct {
 
 type unityScopedRegistries []unityScopedRegistry
 
-func SetupManifest(fn string, cfg *settings.Config, serverHost string) error {
+func SetupManifest(fn string, cfg *settings.Config, serverHost string, authSupported bool) error {
 
 	ba, err := ioutil.ReadFile(fn)
 	if err != nil {
@@ -34,9 +34,13 @@ func SetupManifest(fn string, cfg *settings.Config, serverHost string) error {
 			scopes = append(scopes, s)
 		}
 	}
+	repoUrl := serverHost
+	if authSupported {
+		repoUrl = cfg.Registries[0].UrlString
+	}
 	rgs = append(rgs, unityScopedRegistry{
 		Name:   "UPM local proxy",
-		Url:    serverHost,
+		Url:    repoUrl,
 		Scopes: scopes,
 	})
 
