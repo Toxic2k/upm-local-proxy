@@ -116,9 +116,12 @@ func onReady(cfg *settings.Config, unityCfg *unity_upm_config.Config, serverHost
 	logger.Info().Msg("onReady")
 
 	systray.SetIcon(icon.Data)
-	systray.SetTitle("UPM local proxy")
+	systray.SetTitle(fmt.Sprintf("UPM local proxy %s", settings.VERSION))
 
 	items := trayItems{}
+
+	systray.AddMenuItem(fmt.Sprintf("UPM local proxy %s", settings.VERSION), "").Disable()
+	systray.AddSeparator()
 
 	items.mAutoRun = systray.AddMenuItem("AutoRun", "Run application on computer start")
 
