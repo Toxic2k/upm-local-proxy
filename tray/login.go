@@ -12,6 +12,14 @@ func repoLogin(cfg *settings.Config, unityCfg *unity_upm_config.Config) bool {
 	configChanged := false
 	unityConfigChanged := false
 	for _, r := range cfg.Registries {
+		// force new authorization if unity 2019.3 not authorized
+		ur, ok := unityCfg.NpmAuth[r.UrlString]
+		if !ok || ur.Email == "" || ur.Token == "" {
+			r.Login = ""
+			r.Email = ""
+			r.Token = ""
+		}
+
 		if r.Login == "" {
 			eUser, res, err := dlgs.Entry("Auth", fmt.Sprintf("Enter your login for %s", r.Name), "")
 			if err != nil {
