@@ -43,7 +43,13 @@ func unityAuthSupported(fn string) (bool, error) {
 		return false, err
 	}
 
-	if major >= 2019 && minor >= 3 && patch >= 4 {
+	if major > 2019 {
+		return true, nil
+	}
+	if major == 2019 && minor > 3 {
+		return true, nil
+	}
+	if major == 2019 && minor == 3 && patch >= 4 {
 		return true, nil
 	}
 
